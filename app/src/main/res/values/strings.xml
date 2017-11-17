@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">APKManager</string>
+    <string name="app_name">APKManager</string>>
     <string name="app_codename" translatable="false">Diagolo</string>
     <string name="app_description">Modern, easy and customizable app manager for Android</string>
 

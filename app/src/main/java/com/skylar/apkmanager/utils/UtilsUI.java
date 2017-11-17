@@ -2,6 +2,7 @@ package com.skylar.apkmanager.utils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
@@ -18,105 +19,118 @@ import com.mikepenz.materialdrawer.model.DividerDrawerItem;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.skylar.apkmanager.APKManagerApplication;
 import com.skylar.apkmanager.R;
-import com.skylar.apkmanager.adapter.AppAdapter;
+import com.skylar.apkmanager.activities.LicenseActivity;
+import com.skylar.apkmanager.activities.SettingsActivity;
+import com.skylar.apkmanager.adapters.AppAdapter;
 
-/**
- * Created by Skylar on 2017/9/26.
- */
+import java.util.Calendar;
 
 public class UtilsUI {
 
-    public static Drawer setDrawer(Activity act, Context context, Toolbar toolbar, final AppAdapter appAdapter, final AppAdapter systemAdapter, final AppAdapter favoriteAdapter, final RecyclerView recyclerView){
-        String lable = "...";
-        String appCount,systemCount,favoriteCount;
+    public static int darker (int color, double factor) {
+        int a = Color.alpha(color);
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
 
-        //得到各类APP的数量
-        if(appAdapter!=null){
-            appCount = Integer.toString(appAdapter.getItemCount());
-        }else{
-            appCount = lable;
+        return Color.argb(a, Math.max((int) (r * factor), 0), Math.max((int) (g * factor), 0), Math.max((int) (b * factor), 0));
+    }
+
+    public static Drawer setNavigationDrawer (Activity activity, final Context context, Toolbar toolbar, final AppAdapter appAdapter, final AppAdapter appSystemAdapter, final AppAdapter appFavoriteAdapter,  final RecyclerView recyclerView) {
+        final String loadingLabel = "...";
+        int header;
+        AppPreferences appPreferences = APKManagerApplication.getAppPreferences();
+        String apps, systemApps, favoriteApps;
+
+        if (getDayOrNight() == 1) {
+            header = R.drawable.header_day;
+        } else {
+            header = R.drawable.header_night;
         }
 
-        if(systemAdapter!=null){
-            systemCount = Integer.toString(systemAdapter.getItemCount());
-        }else{
-            systemCount = lable;
+        if (appAdapter != null) {
+            apps = Integer.toString(appAdapter.getItemCount());
+        } else {
+            apps = loadingLabel;
+        }
+        if (appSystemAdapter != null) {
+            systemApps = Integer.toString(appSystemAdapter.getItemCount());
+        } else {
+            systemApps = loadingLabel;
+        }
+        if (appFavoriteAdapter != null) {
+            favoriteApps = Integer.toString(appFavoriteAdapter.getItemCount());
+        } else {
+            favoriteApps = loadingLabel;
         }
 
-        if(favoriteAdapter!=null){
-            favoriteCount = Integer.toString(favoriteAdapter.getItemCount());
-        }else{
-            favoriteCount = lable;
-        }
 
-        //设置header
-        AccountHeader header = new AccountHeaderBuilder()
-                .withActivity(act)
-                .withHeaderBackground(R.drawable.header_day)
+        AccountHeader headerResult = new AccountHeaderBuilder()
+                .withActivity(activity)
+                .withHeaderBackground(header)
                 .build();
 
-        //设置badge style
-        Integer badgeColor = ContextCompat.getColor(context,R.color.divider);
-        BadgeStyle badgeStyle = new BadgeStyle(badgeColor,badgeColor).withTextColor(Color.GRAY);
+        Integer badgeColor = ContextCompat.getColor(context, R.color.divider);
+        BadgeStyle badgeStyle = new BadgeStyle(badgeColor, badgeColor).withTextColor(Color.GRAY);
 
-        //设置drawer
-        DrawerBuilder builder = new DrawerBuilder();
-        builder.withActivity(act);
-        builder.withToolbar(toolbar);
-        builder.withAccountHeader(header);
+        DrawerBuilder drawerBuilder = new DrawerBuilder();
+        drawerBuilder.withActivity(activity);
+        drawerBuilder.withToolbar(toolbar);
+        drawerBuilder.withAccountHeader(headerResult);
+        drawerBuilder.withStatusBarColor(UtilsUI.darker(appPreferences.getPrimaryColorPref(), 0.8));
 
-        builder.addDrawerItems(
-                new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_apps))
-                        .withIcon(GoogleMaterial.Icon.gmd_phone_android)
-                        .withBadge(appCount)
-                        .withBadgeStyle(badgeStyle)
-                        .withIdentifier(1),
-                new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_system_apps))
-                        .withIcon(GoogleMaterial.Icon.gmd_android)
-                        .withBadge(systemCount)
-                        .withBadgeStyle(badgeStyle)
-                        .withIdentifier(2),
-                new DividerDrawerItem(),
-                new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_favorites))
-                        .withIcon(GoogleMaterial.Icon.gmd_star)
-                        .withBadge(favoriteCount)
-                        .withBadgeStyle(badgeStyle)
-                        .withIdentifier(3),
-                new DividerDrawerItem(),
-                new SecondaryDrawerItem().withName(context.getResources().getString(R.string.action_settings))
-                        .withIcon(GoogleMaterial.Icon.gmd_settings)
-                        .withSelectable(false)
-                        .withIdentifier(4),
-                new SecondaryDrawerItem().withName(context.getResources().getString(R.string.action_about))
-                        .withIcon(GoogleMaterial.Icon.gmd_info)
-                        .withSelectable(false)
-                        .withIdentifier(5)
-        );
 
-        builder.withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+            drawerBuilder.addDrawerItems(
+                    new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_apps)).withIcon(GoogleMaterial.Icon.gmd_phone_android).withBadge(apps).withBadgeStyle(badgeStyle).withIdentifier(1),
+                    new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_system_apps)).withIcon(GoogleMaterial.Icon.gmd_android).withBadge(systemApps).withBadgeStyle(badgeStyle).withIdentifier(2),
+                    new DividerDrawerItem(),
+                    new PrimaryDrawerItem().withName(context.getResources().getString(R.string.action_favorites)).withIcon(GoogleMaterial.Icon.gmd_star).withBadge(favoriteApps).withBadgeStyle(badgeStyle).withIdentifier(3),
+                    new DividerDrawerItem(),
+                    new SecondaryDrawerItem().withName(context.getResources().getString(R.string.action_settings)).withIcon(GoogleMaterial.Icon.gmd_settings).withSelectable(false).withIdentifier(4),
+                    new SecondaryDrawerItem().withName(context.getResources().getString(R.string.settings_license)).withIcon(GoogleMaterial.Icon.gmd_info).withSelectable(false).withIdentifier(5));
+
+
+        drawerBuilder.withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
             @Override
-            public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                switch (drawerItem.getIdentifier()){
+            public boolean onItemClick(View view, int position, IDrawerItem iDrawerItem) {
+                switch (iDrawerItem.getIdentifier()) {
                     case 1:
                         recyclerView.setAdapter(appAdapter);
                         break;
                     case 2:
-                        recyclerView.setAdapter(systemAdapter);
+                        recyclerView.setAdapter(appSystemAdapter);
                         break;
                     case 3:
-                        recyclerView.setAdapter(favoriteAdapter);
+                        recyclerView.setAdapter(appFavoriteAdapter);
                         break;
                     case 4:
+                        context.startActivity(new Intent(context, SettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                         break;
                     case 5:
+                        context.startActivity(new Intent(context, LicenseActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                        break;
+
+                    default:
                         break;
                 }
+
                 return false;
             }
         });
 
-        return builder.build();
-
+        return drawerBuilder.build();
     }
+
+    public static int getDayOrNight() {
+        int actualHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+
+        if (actualHour >= 8 && actualHour < 19) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
 }
